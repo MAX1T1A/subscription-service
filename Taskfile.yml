@@ -3,16 +3,6 @@ version: "3"
 dotenv: [".env"]
 
 tasks:
-  dev:
-    desc: Start in dev mode with hot-reload (Air)
-    cmds:
-      - docker compose -f air.docker-compose.yml up --build
-
-  dev-down:
-    desc: Stop dev services
-    cmds:
-      - docker compose -f air.docker-compose.yml down
-
   up:
     desc: Start all services
     cmds:
@@ -22,18 +12,3 @@ tasks:
     desc: Stop all services
     cmds:
       - docker compose down
-
-  migrate-create:
-    desc: "Create a new migration (usage: task migrate-create -- name)"
-    cmds:
-      - "migrate create -ext sql -dir migrations -seq {{.CLI_ARGS}}"
-
-  migrate-up:
-    desc: Apply migrations manually
-    cmds:
-      - migrate -path migrations -database "${DATABASE_URL}" up
-
-  migrate-down:
-    desc: Rollback last migration
-    cmds:
-      - migrate -path migrations -database "${DATABASE_URL}" down 1
