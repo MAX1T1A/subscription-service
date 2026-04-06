@@ -9,5 +9,5 @@ import (
 )
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*model.Subscription, error) {
-	return s.repo.GetByID(ctx, id)
+	return s.repository.GetByID(ctx, id)
 }

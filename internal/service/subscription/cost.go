@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) GetTotalCost(ctx context.Context, q model.CostQuery) (int, error) {
-	return s.repo.GetTotalCost(ctx, q)
+	return s.repository.GetTotalCost(ctx, q)
 }

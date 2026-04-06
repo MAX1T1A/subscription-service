@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
-	return s.repo.Delete(ctx, id)
+	return s.repository.Delete(ctx, id)
 }

@@ -10,11 +10,11 @@ import (
 )
 
 type Service struct {
-	repo *paymentRepository.Repository
+	repository *paymentRepository.Repository
 }
 
-func New(repo *paymentRepository.Repository) *Service {
-	return &Service{repo: repo}
+func New(repository *paymentRepository.Repository) *Service {
+	return &Service{repository: repository}
 }
 
 type Svc interface {

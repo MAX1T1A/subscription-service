@@ -46,7 +46,7 @@ func (s *Service) Create(ctx context.Context, req model.CreateSubscriptionReques
 		Status:      model.StatusActive,
 	}
 
-	if err := s.repo.Create(ctx, sub); err != nil {
+	if err := s.repository.Create(ctx, sub); err != nil {
 		return nil, fmt.Errorf("failed to create subscription: %w", err)
 	}
 

@@ -16,5 +16,5 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, req model.UpdateSubs
 			return nil, fmt.Errorf("invalid end_date format, expected MM-YYYY: %w", err)
 		}
 	}
-	return s.repo.Update(ctx, id, req)
+	return s.repository.Update(ctx, id, req)
 }

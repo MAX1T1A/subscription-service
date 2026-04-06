@@ -14,22 +14,22 @@ import (
 )
 
 type RenewalWorker struct {
-	subRepo   *subscriptionRepository.Repository
-	payRepo   *paymentRepository.Repository
+	subscriptionRepository   *subscriptionRepository.Repository
+	paymentRepository   *paymentRepository.Repository
 	interval  time.Duration
 	threshold time.Duration
 	logger    *zap.Logger
 }
 
 func NewRenewalWorker(
-	subRepo *subscriptionRepository.Repository,
-	payRepo *paymentRepository.Repository,
+	subscriptionRepository *subscriptionRepository.Repository,
+	paymentRepository *paymentRepository.Repository,
 	interval, threshold time.Duration,
 	logger *zap.Logger,
 ) *RenewalWorker {
 	return &RenewalWorker{
-		subRepo:   subRepo,
-		payRepo:   payRepo,
+		subscriptionRepository:   subscriptionRepository,
+		paymentRepository:   paymentRepository,
 		interval:  interval,
 		threshold: threshold,
 		logger:    logger,
@@ -59,7 +59,7 @@ func (w *RenewalWorker) Start(ctx context.Context) {
 func (w *RenewalWorker) processExpiring(ctx context.Context) {
 	thresholdStr := fmt.Sprintf("%d seconds", int(w.threshold.Seconds()))
 
-	subs, err := w.subRepo.GetExpiring(ctx, thresholdStr)
+	subs, err := w.subscriptionRepository.GetExpiring(ctx, thresholdStr)
 	if err != nil {
 		w.logger.Error("failed to get expiring subscriptions", zap.Error(err))
 		return
@@ -90,7 +90,7 @@ func (w *RenewalWorker) renewSubscription(ctx context.Context, sub model.Subscri
 		Status:         model.PaymentStatusSuccess,
 	}
 
-	if err := w.payRepo.Create(ctx, payment); err != nil {
+	if err := w.paymentRepository.Create(ctx, payment); err != nil {
 		w.logger.Error("failed to create renewal payment",
 			zap.String("subscription_id", sub.ID.String()),
 			zap.Error(err),
@@ -98,7 +98,7 @@ func (w *RenewalWorker) renewSubscription(ctx context.Context, sub model.Subscri
 		return
 	}
 
-	renewed, err := w.subRepo.Renew(ctx, sub.ID, durationSeconds)
+	renewed, err := w.subscriptionRepository.Renew(ctx, sub.ID, durationSeconds)
 	if err != nil {
 		w.logger.Error("failed to renew subscription",
 			zap.String("subscription_id", sub.ID.String()),
@@ -115,7 +115,7 @@ func (w *RenewalWorker) renewSubscription(ctx context.Context, sub model.Subscri
 }
 
 func (w *RenewalWorker) expireSubscription(ctx context.Context, sub model.Subscription) {
-	if err := w.subRepo.Expire(ctx, sub.ID); err != nil {
+	if err := w.subscriptionRepository.Expire(ctx, sub.ID); err != nil {
 		w.logger.Error("failed to expire subscription",
 			zap.String("subscription_id", sub.ID.String()),
 			zap.Error(err),

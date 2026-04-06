@@ -9,5 +9,5 @@ import (
 )
 
 func (s *Service) ListBySubscription(ctx context.Context, subID uuid.UUID, limit, offset int) ([]model.Payment, error) {
-	return s.repo.ListBySubscription(ctx, subID, limit, offset)
+	return s.repository.ListBySubscription(ctx, subID, limit, offset)
 }

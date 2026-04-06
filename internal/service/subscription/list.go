@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) List(ctx context.Context, filter model.SubscriptionFilter) ([]model.Subscription, error) {
-	return s.repo.List(ctx, filter)
+	return s.repository.List(ctx, filter)
 }
