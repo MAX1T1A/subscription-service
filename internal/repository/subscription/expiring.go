@@ -10,7 +10,7 @@ import (
 
 func (r *Repository) GetExpiring(ctx context.Context, threshold string) ([]model.Subscription, error) {
 	query := `
-		SELECT * FROM subscriptions
+		SELECT id, service_name, price, user_id, start_date, end_date, auto_renew, status, created_at, updated_at FROM subscriptions
 		WHERE status = 'active'
 		  AND end_date <= now() + $1::interval
 		ORDER BY end_date ASC`
@@ -29,7 +29,7 @@ func (r *Repository) Renew(ctx context.Context, id uuid.UUID, durationSeconds in
 		SET end_date = end_date + make_interval(secs => $1),
 		    updated_at = now()
 		WHERE id = $2
-		RETURNING *`
+		RETURNING id, service_name, price, user_id, start_date, end_date, auto_renew, status, created_at, updated_at`
 
 	var s model.Subscription
 	err := r.db.GetContext(ctx, &s, query, durationSeconds, id)

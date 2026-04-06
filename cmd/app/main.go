@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 
 	"github.com/max1t1a/subscription-service/config"
 	_ "github.com/max1t1a/subscription-service/docs"
@@ -30,11 +30,14 @@ import (
 // @description     REST API for managing user subscriptions and payments.
 // @BasePath        /api/v1
 func main() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+
 	cfg := config.Load()
 
 	db, err := connectDB(cfg.DB)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
 	defer db.Close()
 
@@ -47,7 +50,7 @@ func main() {
 	subHandler := subscriptionHandler.New(subService)
 	payHandler := paymentHandler.New(payService)
 
-	router := api.NewRouter(subHandler, payHandler)
+	router := api.NewRouter(subHandler, payHandler, logger)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.AppPort,
@@ -57,13 +60,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	renewalWorker := worker.NewRenewalWorker(subRepository, payRepository, cfg.Worker.Interval, cfg.Worker.RenewalThreshold)
+	renewalWorker := worker.NewRenewalWorker(subRepository, payRepository, cfg.Worker.Interval, cfg.Worker.RenewalThreshold, logger)
 	go renewalWorker.Start(ctx)
 
 	go func() {
-		log.Printf("server starting on port %s", cfg.AppPort)
+		logger.Info("server starting", zap.String("port", cfg.AppPort))
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("server error: %v", err)
+			logger.Fatal("server error", zap.Error(err))
 		}
 	}()
 
@@ -71,17 +74,17 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("shutting down...")
+	logger.Info("shutting down...")
 	cancel()
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("server forced to shutdown: %v", err)
+		logger.Error("server forced to shutdown", zap.Error(err))
 	}
 
-	log.Println("server stopped")
+	logger.Info("server stopped")
 }
 
 func connectDB(cfg config.DBConfig) (*sqlx.DB, error) {

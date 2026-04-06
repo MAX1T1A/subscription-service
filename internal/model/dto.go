@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreateSubscriptionRequest struct {
 	ServiceName string    `json:"service_name" binding:"required"`
@@ -22,13 +26,15 @@ type SubscriptionFilter struct {
 	UserID      *uuid.UUID
 	ServiceName *string
 	Status      *SubscriptionStatus
+	Limit       int
+	Offset      int
 }
 
 type CostQuery struct {
 	UserID      *uuid.UUID
 	ServiceName *string
-	StartPeriod *string
-	EndPeriod   *string
+	StartPeriod time.Time
+	EndPeriod   time.Time
 }
 
 type CostResponse struct {

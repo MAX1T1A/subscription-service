@@ -1,6 +1,8 @@
 package subscription
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +20,7 @@ import (
 // @Param        body body model.UpdateSubscriptionRequest true "Fields to update"
 // @Success      200 {object} model.Subscription
 // @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
 // @Router       /subscriptions/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
@@ -34,7 +37,11 @@ func (h *Handler) Update(c *gin.Context) {
 
 	sub, err := h.svc.Update(c.Request.Context(), id, req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

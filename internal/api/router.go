@@ -4,17 +4,18 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 
 	paymentHandler "github.com/max1t1a/subscription-service/internal/api/handler/payment"
 	subscriptionHandler "github.com/max1t1a/subscription-service/internal/api/handler/subscription"
 	"github.com/max1t1a/subscription-service/internal/api/middleware"
 )
 
-func NewRouter(subH *subscriptionHandler.Handler, payH *paymentHandler.Handler) *gin.Engine {
+func NewRouter(subH *subscriptionHandler.Handler, payH *paymentHandler.Handler, logger *zap.Logger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 
-	r.Use(middleware.Logger(), gin.Recovery())
+	r.Use(middleware.Logger(logger), gin.Recovery())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

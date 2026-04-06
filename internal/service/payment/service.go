@@ -18,5 +18,5 @@ func New(repo *paymentRepository.Repository) *Service {
 }
 
 type Svc interface {
-	ListBySubscription(ctx context.Context, subID uuid.UUID) ([]model.Payment, error)
+	ListBySubscription(ctx context.Context, subID uuid.UUID, limit, offset int) ([]model.Payment, error)
 }

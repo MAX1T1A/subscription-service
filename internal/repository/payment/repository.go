@@ -19,5 +19,5 @@ func New(db *sqlx.DB) *Repository {
 
 type PaymentRepository interface {
 	Create(ctx context.Context, p *model.Payment) error
-	ListBySubscription(ctx context.Context, subID uuid.UUID) ([]model.Payment, error)
+	ListBySubscription(ctx context.Context, subID uuid.UUID, limit, offset int) ([]model.Payment, error)
 }

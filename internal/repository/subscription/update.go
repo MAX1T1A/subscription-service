@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -26,8 +27,9 @@ func (r *Repository) Update(ctx context.Context, id uuid.UUID, req model.UpdateS
 		idx++
 	}
 	if req.EndDate != nil {
+		endDate, _ := time.Parse("01-2006", *req.EndDate) // validated in service
 		sets = append(sets, fmt.Sprintf("end_date = $%d", idx))
-		args = append(args, *req.EndDate)
+		args = append(args, endDate)
 		idx++
 	}
 	if req.AutoRenew != nil {
@@ -44,7 +46,7 @@ func (r *Repository) Update(ctx context.Context, id uuid.UUID, req model.UpdateS
 	args = append(args, id)
 
 	query := fmt.Sprintf(
-		"UPDATE subscriptions SET %s WHERE id = $%d RETURNING *",
+		"UPDATE subscriptions SET %s WHERE id = $%d RETURNING id, service_name, price, user_id, start_date, end_date, auto_renew, status, created_at, updated_at",
 		strings.Join(sets, ", "), idx,
 	)
 

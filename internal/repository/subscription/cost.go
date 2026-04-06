@@ -8,9 +8,19 @@ import (
 )
 
 func (r *Repository) GetTotalCost(ctx context.Context, q model.CostQuery) (int, error) {
-	query := "SELECT COALESCE(SUM(price), 0) FROM subscriptions WHERE 1=1"
-	args := []interface{}{}
-	idx := 1
+	// $1 = end_period (exclusive upper bound), $2 = start_period
+	query := `
+		SELECT COALESCE(SUM(
+			price * (
+				EXTRACT(YEAR FROM AGE(LEAST(end_date, $1), GREATEST(start_date, $2)))::int * 12 +
+				EXTRACT(MONTH FROM AGE(LEAST(end_date, $1), GREATEST(start_date, $2)))::int
+			)
+		), 0)
+		FROM subscriptions
+		WHERE start_date < $1 AND end_date > $2`
+
+	args := []interface{}{q.EndPeriod, q.StartPeriod}
+	idx := 3
 
 	if q.UserID != nil {
 		query += fmt.Sprintf(" AND user_id = $%d", idx)
@@ -20,16 +30,6 @@ func (r *Repository) GetTotalCost(ctx context.Context, q model.CostQuery) (int, 
 	if q.ServiceName != nil {
 		query += fmt.Sprintf(" AND service_name = $%d", idx)
 		args = append(args, *q.ServiceName)
-		idx++
-	}
-	if q.StartPeriod != nil {
-		query += fmt.Sprintf(" AND start_date >= $%d", idx)
-		args = append(args, *q.StartPeriod)
-		idx++
-	}
-	if q.EndPeriod != nil {
-		query += fmt.Sprintf(" AND start_date <= $%d", idx)
-		args = append(args, *q.EndPeriod)
 		idx++
 	}
 

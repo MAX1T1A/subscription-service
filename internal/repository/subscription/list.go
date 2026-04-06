@@ -8,7 +8,7 @@ import (
 )
 
 func (r *Repository) List(ctx context.Context, filter model.SubscriptionFilter) ([]model.Subscription, error) {
-	query := "SELECT * FROM subscriptions WHERE 1=1"
+	query := "SELECT id, service_name, price, user_id, start_date, end_date, auto_renew, status, created_at, updated_at FROM subscriptions WHERE 1=1"
 	args := []interface{}{}
 	idx := 1
 
@@ -28,7 +28,8 @@ func (r *Repository) List(ctx context.Context, filter model.SubscriptionFilter) 
 		idx++
 	}
 
-	query += " ORDER BY created_at DESC"
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", idx, idx+1)
+	args = append(args, filter.Limit, filter.Offset)
 
 	var subs []model.Subscription
 	err := r.db.SelectContext(ctx, &subs, query, args...)

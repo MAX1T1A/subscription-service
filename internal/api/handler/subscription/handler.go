@@ -1,13 +1,13 @@
 package subscription
 
 import (
-	subsvc "github.com/max1t1a/subscription-service/internal/service/subscription"
+	subscriptionService "github.com/max1t1a/subscription-service/internal/service/subscription"
 )
 
 type Handler struct {
-	svc *subsvc.Service
+	svc *subscriptionService.Service
 }
 
-func New(svc *subsvc.Service) *Handler {
+func New(svc *subscriptionService.Service) *Handler {
 	return &Handler{svc: svc}
 }

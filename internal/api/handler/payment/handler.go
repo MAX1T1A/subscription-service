@@ -1,13 +1,13 @@
 package payment
 
 import (
-	paysvc "github.com/max1t1a/subscription-service/internal/service/payment"
+	paymentService "github.com/max1t1a/subscription-service/internal/service/payment"
 )
 
 type Handler struct {
-	svc *paysvc.Service
+	svc *paymentService.Service
 }
 
-func New(svc *paysvc.Service) *Handler {
+func New(svc *paymentService.Service) *Handler {
 	return &Handler{svc: svc}
 }

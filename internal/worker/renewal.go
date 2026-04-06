@@ -3,10 +3,10 @@ package worker
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/max1t1a/subscription-service/internal/model"
 	paymentRepository "github.com/max1t1a/subscription-service/internal/repository/payment"
@@ -18,23 +18,29 @@ type RenewalWorker struct {
 	payRepo   *paymentRepository.Repository
 	interval  time.Duration
 	threshold time.Duration
+	logger    *zap.Logger
 }
 
 func NewRenewalWorker(
 	subRepo *subscriptionRepository.Repository,
 	payRepo *paymentRepository.Repository,
 	interval, threshold time.Duration,
+	logger *zap.Logger,
 ) *RenewalWorker {
 	return &RenewalWorker{
 		subRepo:   subRepo,
 		payRepo:   payRepo,
 		interval:  interval,
 		threshold: threshold,
+		logger:    logger,
 	}
 }
 
 func (w *RenewalWorker) Start(ctx context.Context) {
-	log.Printf("renewal worker started (interval: %s, threshold: %s)", w.interval, w.threshold)
+	w.logger.Info("renewal worker started",
+		zap.Duration("interval", w.interval),
+		zap.Duration("threshold", w.threshold),
+	)
 
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
@@ -42,7 +48,7 @@ func (w *RenewalWorker) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("renewal worker stopped")
+			w.logger.Info("renewal worker stopped")
 			return
 		case <-ticker.C:
 			w.processExpiring(ctx)
@@ -55,7 +61,7 @@ func (w *RenewalWorker) processExpiring(ctx context.Context) {
 
 	subs, err := w.subRepo.GetExpiring(ctx, thresholdStr)
 	if err != nil {
-		log.Printf("failed to get expiring subscriptions: %v", err)
+		w.logger.Error("failed to get expiring subscriptions", zap.Error(err))
 		return
 	}
 
@@ -63,7 +69,7 @@ func (w *RenewalWorker) processExpiring(ctx context.Context) {
 		return
 	}
 
-	log.Printf("processing %d expiring subscription(s)", len(subs))
+	w.logger.Info("processing expiring subscriptions", zap.Int("count", len(subs)))
 
 	for _, sub := range subs {
 		if sub.AutoRenew {
@@ -85,24 +91,37 @@ func (w *RenewalWorker) renewSubscription(ctx context.Context, sub model.Subscri
 	}
 
 	if err := w.payRepo.Create(ctx, payment); err != nil {
-		log.Printf("failed to create renewal payment for subscription %s: %v", sub.ID, err)
+		w.logger.Error("failed to create renewal payment",
+			zap.String("subscription_id", sub.ID.String()),
+			zap.Error(err),
+		)
 		return
 	}
 
 	renewed, err := w.subRepo.Renew(ctx, sub.ID, durationSeconds)
 	if err != nil {
-		log.Printf("failed to renew subscription %s: %v", sub.ID, err)
+		w.logger.Error("failed to renew subscription",
+			zap.String("subscription_id", sub.ID.String()),
+			zap.Error(err),
+		)
 		return
 	}
 
-	log.Printf("subscription %s renewed until %s (payment %s)", sub.ID, renewed.EndDate.Format("2006-01-02"), payment.ID)
+	w.logger.Info("subscription renewed",
+		zap.String("subscription_id", sub.ID.String()),
+		zap.String("new_end_date", renewed.EndDate.Format("2006-01-02")),
+		zap.String("payment_id", payment.ID.String()),
+	)
 }
 
 func (w *RenewalWorker) expireSubscription(ctx context.Context, sub model.Subscription) {
 	if err := w.subRepo.Expire(ctx, sub.ID); err != nil {
-		log.Printf("failed to expire subscription %s: %v", sub.ID, err)
+		w.logger.Error("failed to expire subscription",
+			zap.String("subscription_id", sub.ID.String()),
+			zap.Error(err),
+		)
 		return
 	}
 
-	log.Printf("subscription %s expired", sub.ID)
+	w.logger.Info("subscription expired", zap.String("subscription_id", sub.ID.String()))
 }
